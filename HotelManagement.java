@@ -1,8 +1,8 @@
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Vector;
 
 class Room {
     int roomNumber;
@@ -67,9 +67,9 @@ class Guest {
 }
 
 public class HotelManagement {
-    private static List<Room> rooms = new Vector<>();  // Use Vector here
-    private static List<Guest> guests = new Vector<>();  // Use Vector here
-    private static List<Guest> pastGuests = new Vector<>();  // Use Vector here
+    private static List<Room> rooms = new ArrayList<>();  // Use ArrayList here
+    private static List<Guest> guests = new ArrayList<>();  // Use ArrayList here
+    private static List<Guest> pastGuests = new ArrayList<>();  // Use ArrayList here
 
     public static void main(String[] args) {
         // Initialize some rooms
@@ -169,7 +169,6 @@ public class HotelManagement {
                     " | Address: " + guest.address + " | Identity Proof: " + guest.identityProof +
                     " | Room Numbers: " + guest.roomNumbers + " | Booking Time: " + guest.bookingTime);
         }
-        // Show past guests
         System.out.println("\nPast Guests:");
         for (Guest pastGuest : pastGuests) {
             System.out.println("Guest Name: " + pastGuest.name + " | Phone Number: " + pastGuest.phoneNumber +
@@ -187,13 +186,12 @@ public class HotelManagement {
     }
 
     private static void bookRoom(Scanner scanner) {
-        // Ask for guest details
         String guestName;
         while (true) {
             System.out.print("Enter guest name (letters only): ");
             guestName = scanner.nextLine();
             if (guestName.matches("[a-zA-Z ]+")) {
-                break;  // Valid name
+                break;
             } else {
                 System.out.println("Invalid name! Please enter letters only.");
             }
@@ -204,7 +202,7 @@ public class HotelManagement {
             System.out.print("Enter phone number (10 digits): ");
             phoneNumber = scanner.nextLine();
             if (phoneNumber.matches("\\d{10}")) {
-                break;  // Valid phone number
+                break;
             } else {
                 System.out.println("Invalid phone number! It must be exactly 10 digits.");
             }
@@ -215,81 +213,66 @@ public class HotelManagement {
         System.out.print("Enter identity proof (e.g., Passport, ID): ");
         String identityProof = scanner.nextLine();
 
-        List<Integer> roomNumbers = new Vector<>();
+        List<Integer> roomNumbers = new ArrayList<>();
         Room selectedRoom = null;
 
-        // Loop until a valid, available room number is entered
         while (true) {
             System.out.print("Enter room number to book: ");
             int roomNumber = scanner.nextInt();
-            scanner.nextLine(); // consume the leftover newline
+            scanner.nextLine();
 
-            // Check if the room is available
             for (Room room : rooms) {
                 if (room.roomNumber == roomNumber && !room.isBooked) {
                     selectedRoom = room;
-                    roomNumbers.add(roomNumber); // Add the room number to the list
+                    roomNumbers.add(roomNumber);
                     break;
                 }
             }
             if (selectedRoom != null) {
-                break; // room is available
+                break;
             } else {
                 System.out.println("Room is not available or invalid room number. Please choose another room.");
             }
         }
 
-        // Ask for additional booking details
         System.out.print("Enter number of persons: ");
         int persons = scanner.nextInt();
         System.out.print("Enter number of nights: ");
         int nights = scanner.nextInt();
 
-        // Calculate the total bill for all booked rooms
         float totalBill = selectedRoom.pricePerNight * nights;
-
-        // Mark the selected room as booked
         selectedRoom.isBooked = true;
 
-        // Add the guest to the list and the past guests list upon checkout
         Guest newGuest = new Guest(guestName, phoneNumber, address, identityProof, roomNumbers, persons, nights, totalBill);
         guests.add(newGuest);
-        System.out.println("Room booked successfully for " + persons + " person(s)!");
-        System.out.println("Guest Name: " + guestName + " | Room Number: " + selectedRoom.roomNumber);
-        System.out.println("Total Bill: $" + totalBill);
+        System.out.println("Room booked successfully!");
+        System.out.println("Total Bill: RS." + totalBill);
     }
 
     private static void checkOut(Scanner scanner) {
-        System.out.print("Enter your name for check-out: ");
-        String guestName = scanner.nextLine();
+        System.out.print("Enter room number to check-out: ");
+        int roomNumber = scanner.nextInt();
+        scanner.nextLine();
 
-        // Search for the guest by name
+        Guest guestToRemove = null;
         for (Guest guest : guests) {
-            if (guest.name.equalsIgnoreCase(guestName)) {
-                System.out.println("You have to check out room numbers " + guest.roomNumbers + " (yes/no)?");
-                String confirmCheckOut = scanner.nextLine();
-
-                if (confirmCheckOut.equalsIgnoreCase("yes")) {
-                    // Free up the rooms
-                    for (int roomNumber : guest.roomNumbers) {
-                        for (Room room : rooms) {
-                            if (room.roomNumber == roomNumber) {
-                                room.isBooked = false; // Mark the room as available
-                                break;
-                            }
-                        }
-                    }
-                    // Move the guest to the past guests list
-                    pastGuests.add(guest);
-                    // Remove the guest from the current list
-                    guests.remove(guest);
-                    System.out.println("Check-out successful for " + guestName + " from room numbers " + guest.roomNumbers + ".");
-                } else {
-                    System.out.println("Check-out canceled.");
-                }
-                return; // Exit the method after processing the check-out
+            if (guest.roomNumbers.contains(roomNumber)) {
+                guestToRemove = guest;
+                break;
             }
         }
-        System.out.println("No booking found for the name: " + guestName);
+
+        if (guestToRemove != null) {
+            for (Room room : rooms) {
+                if (guestToRemove.roomNumbers.contains(room.roomNumber)) {
+                    room.isBooked = false;
+                }
+            }
+            guests.remove(guestToRemove);
+            pastGuests.add(guestToRemove);
+            System.out.println("Guest successfully checked out. Room is now available.");
+        } else {
+            System.out.println("Invalid room number or no guest is staying in that room.");
+        }
     }
 }
